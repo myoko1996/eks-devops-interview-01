@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usermgmt-microservice
+  labels:
+    app: usermgmt-restapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: usermgmt-restapp
+  template:
+    metadata:
+      labels:
+        app: usermgmt-restapp
+    spec:
+      containers:
+      - name: usermgmt-restapp
+        image: stacksimplify/kube-usermgmt-microservice:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8095
+        env:
+        - name: DB_HOSTNAME
+          value: "mysql"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_NAME
+          value: "webappdb"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-db-username
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-db-password
+              key: db-password
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /usermgmt/health-status
+            port: 8095
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /usermgmt/health-status
+            port: 8095
+          initialDelaySeconds: 60
+          periodSeconds: 10
