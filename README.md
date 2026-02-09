@@ -50,6 +50,7 @@ aws sts get-caller-identity
 2. **MySQL-externalName-Service.yml** - MySQL external service configuration
 3. **UserManagementMicroservice-Deployment-Service.yml** - Application deployment
 4. **Kubernets-Secrets.yml** - Database credentials
+5. **ClassicLoadBalancer.yml** - AWS Classic LoadBalancer
 
 
 ---
@@ -74,17 +75,17 @@ eksctl get cluster --name Interview-DevOps --region ap-southeast-1
 
 ```bash
 # Make the script executable
-chmod +x create-private-nodegroup.sh
+chmod +x private-nodegroup.sh
 
 # Execute the script
-./create-private-nodegroup.sh
+./private-nodegroup.sh
 
 # Wait for node group creation (this may take 10-15 minutes)
 # Monitor the progress
 eksctl get nodegroup --cluster=Interview-DevOps --region=ap-southeast-1
 ```
 
-**Alternative: Using eksctl Confile file**
+**Alternative: Using eksctl Config file**
 ```bash
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
