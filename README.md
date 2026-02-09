@@ -37,6 +37,9 @@ kubectl version --client
 
 # Check eksctl
 eksctl version
+
+# Verify AWS credentials
+aws sts get-caller-identity
 ```
 
 ---
@@ -81,25 +84,39 @@ chmod +x create-private-nodegroup.sh
 eksctl get nodegroup --cluster=Interview-DevOps --region=ap-southeast-1
 ```
 
-**Alternative: Manual eksctl Command**
+**Alternative: Using eksctl Confile file**
 ```bash
-eksctl create nodegroup \
-  --cluster=Interview-DevOps \
-  --region=ap-southeast-1 \
-  --name=Interview-DevOps-ng1-private \
-  --node-type=t2.small \
-  --nodes-min=2 \
-  --nodes-max=4 \
-  --node-volume-size=20 \
-  --ssh-access \
-  --ssh-public-key=Interview-DevOps \
-  --managed \
-  --asg-access \
-  --external-dns-access \
-  --full-ecr-access \
-  --appmesh-access \
-  --alb-ingress-access \
-  --node-private-networking
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: Interview-DevOps
+  region: ap-southeast-1
+  version: "1.28"
+
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: Interview-DevOps-ng1-private
+    instanceType: t2.small
+    minSize: 2
+    maxSize: 4
+    desiredCapacity: 2
+    volumeSize: 20
+    privateNetworking: true
+    ssh:
+      allow: true
+      publicKeyName: Interview-DevOps
+    iam:
+      withAddonPolicies:
+        externalDNS: true
+        albIngress: true
+        ebs: true
+        efs: true
+    tags:
+      Environment: Interview
+      ManagedBy: eksctl
 ```
 
 ### Step 3: Verify Node Group in Private Subnets
@@ -143,6 +160,9 @@ echo -n 'your-password' | base64
 kubectl apply -f Kubernetes-Secrets.yml
 kubectl apply -f MySQL-externalName-Service.yml
 kubectl apply -f UserManagementMicroservice-Deployment-Service.yml
+kubectl apply -f ClassicLoadBalancer.yml
+# Wait for deployments to be ready
+kubectl rollout status deployment/usermgmt-microservice
 ```
 
 **Or deploy all at once:**
@@ -258,10 +278,6 @@ kubectl get events --sort-by='.lastTimestamp'
 
 ---
 
-## Troubleshooting
-
----
-
 ## Architecture Overview
 
 ```
@@ -319,6 +335,7 @@ To remove all resources:
 kubectl delete -f UserManagementMicroservice-Deployment-Service.yml
 kubectl delete -f MySQL-externalName-Service.yml
 kubectl delete -f Kubernetes-Secrets.yml
+kubectl delete -f ClassicLoadBalancer.yml
 
 # Delete node group
 eksctl delete nodegroup \
